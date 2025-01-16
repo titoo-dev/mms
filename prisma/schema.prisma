@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator pothos {
+  provider = "prisma-pothos-types"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model State {
+  key   String @id
+  value String
+}
+
+model Track {
+  id        String   @id @default(uuid())
+  title     String
+  coverPath String
+  path      String   @unique
+  artists   Artist[]
+  album     Album    @relation(fields: [albumId], references: [id])
+  albumId   String
+}
+
+model Artist {
+  id     String  @id @default(uuid())
+  name   String
+  tracks Track[]
+  albums Album[]
+}
+
+model Album {
+  id        String   @id @default(uuid())
+  title     String
+  coverPath String
+  tracks    Track[]
+  artists   Artist[]
+}

@@ -2,19 +2,29 @@
   "name": "mms",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "index.js",
+  "description": "My simple music srver",
+  "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
-    "dev": "tsx watch ./src"
+    "dev": "tsx watch ./src",
+    "db:push": "prisma db push"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.10.6",
+    "prettier": "^3.4.2",
+    "prisma": "^6.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@pothos/core": "^4.3.0",
+    "@pothos/plugin-prisma": "^4.4.0",
+    "@prisma/client": "6.2.1",
+    "graphql": "16.10.0",
+    "graphql-yoga": "5.10.4"
   }
 }

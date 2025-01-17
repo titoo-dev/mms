@@ -1,60 +1,131 @@
 import { glob } from "glob";
+import * as uuid from "uuid";
 import * as fs from "node:fs";
+import * as fh from "folder-hash";
+import { logger } from "./logger.js";
+import { basename } from "node:path";
 import * as mm from "music-metadata";
+import { prisma } from "$prisma/client.js";
 import { config, coverPath } from "../config.js";
 import type { LoadedTracks } from "../server/types.js";
-import * as path from "node:path";
-import { logger } from "./logger.js";
 
-const SUPPORTED_EXTENSIONS = [".mp3", ".flac", ".wav", ".ogg"];
-const GLOB_PATTERN = `${config.musicPath}/**/*.{${SUPPORTED_EXTENSIONS.map((ext) => ext.slice(1)).join(",")}}`;
+class MusicLibraryManager {
+  private readonly supportedExtensions = ["mp3", "flac", "wav", "ogg"];
+  private readonly globPattern = `${config.musicPath}/**/*.{${this.supportedExtensions.join(",")}}`;
 
-const saveCover = async (pics: mm.IPicture[] | undefined, coverId: string) => {
-  const cover = mm.selectCover(pics);
-  if (!cover) {
-    return;
-  }
-  await fs.promises.writeFile(`${coverPath}/${coverId}`, cover.data);
-};
+  async getCoverPath(
+    pictures: mm.IPicture[] | undefined,
+    albumId: string,
+  ): Promise<string | null> {
+    const cover = mm.selectCover(pictures);
+    if (!cover) return null;
 
-export const loadTracks = async (
-  getCoverId: (trackAlbum: string) => string,
-  onOneTrackLoaded?: (
-    metadata: TOnOneLoadedTrackParams,
-    loadingState: LoadedTracks,
-  ) => Promise<void>,
-) => {
-  const tracks = await glob(GLOB_PATTERN, { nodir: true, stat: true });
+    const ext = cover.format.split("/")[1] ?? "jpg";
+    const path = `${coverPath}/${albumId}.${ext}`;
 
-  const processTrackPromises = tracks.map(async (track, index) => {
     try {
-      const { common } = await mm.parseFile(track!);
-
-      await onOneTrackLoaded?.(common, {
-        current: index + 1,
-        total: tracks.length,
-      });
-
-      // TODO: you know what to do here
-      await saveCover(
-        common.picture,
-        getCoverId(common.album || path.basename(track!)),
-      );
-      return common;
-    } catch (error) {
-      await logger.error(
-        `Error loading track at ${track}: \n${(error as Error).message}`,
-      );
-
-      throw new Error(
-        `Error loading track at ${track}: ${(error as Error).message}`,
-      );
+      await fs.promises.access(path);
+    } catch {
+      await fs.promises.writeFile(path, cover.data);
     }
-  });
+    return path;
+  }
 
-  return Promise.all(processTrackPromises).then(async () => {
-    console.log("All tracks loaded");
-  });
-};
+  async saveTrack(metadata: mm.IAudioMetadata["common"] & { path: string }) {
+    const trackTitle = metadata.title || basename(metadata.path);
+    const artists = (metadata.artist?.split(/,|, /g) ?? []).map((name) =>
+      name.trim(),
+    );
 
-export type TOnOneLoadedTrackParams = mm.IAudioMetadata["common"];
+    const albumIdentifier = `${metadata.album ?? trackTitle}-${metadata.albumartist || "Various Artists"}`;
+    const albumId = uuid.v5(albumIdentifier, uuid.v5.DNS);
+
+    const existingAlbum = await prisma.album.findUnique({
+      where: { id: albumId },
+    });
+    const coverPath =
+      existingAlbum?.coverPath ||
+      (metadata.picture
+        ? await this.getCoverPath(metadata.picture, albumId)
+        : null);
+
+    const album = await prisma.album.upsert({
+      where: { id: albumId },
+      update: { coverPath: existingAlbum?.coverPath ? undefined : coverPath },
+      create: {
+        id: albumId,
+        title: metadata.album || trackTitle,
+        coverPath,
+      },
+    });
+
+    const artistRecords = await Promise.all(
+      artists.map((name) =>
+        prisma.artist.upsert({
+          where: { id: uuid.v5(`${name}-${albumId}`, uuid.v5.DNS) },
+          update: {},
+          create: {
+            id: uuid.v5(`${name}-${albumId}`, uuid.v5.DNS),
+            name,
+            albums: { connect: { id: album.id } },
+          },
+        }),
+      ),
+    );
+
+    const track = await prisma.track.findUnique({
+      where: { path: metadata.path },
+    });
+
+    if (track) return track;
+
+    return prisma.track.create({
+      data: {
+        title: trackTitle,
+        path: metadata.path,
+        album: { connect: { id: album.id } },
+        artists: {
+          connect: artistRecords.map((artist) => ({ id: artist.id })),
+        },
+      },
+    });
+  }
+
+  async loadTracks(
+    onProgress?: (
+      metadata: LoadedMetadata,
+      state: LoadedTracks,
+    ) => Promise<void>,
+  ) {
+    const tracks = await glob(this.globPattern, { nodir: true, stat: true });
+
+    return Promise.all(
+      tracks.map(async (trackPath, index) => {
+        try {
+          const { common } = await mm.parseFile(trackPath);
+          const metadata = { ...common, path: trackPath };
+
+          await onProgress?.(metadata, {
+            current: index + 1,
+            total: tracks.length,
+          });
+
+          return common;
+        } catch (error) {
+          const message = `Error loading track at ${trackPath}: ${(error as Error).message}`;
+          await logger.error(message);
+          throw new Error(message);
+        }
+      }),
+    );
+  }
+
+  async getDirectoryHash() {
+    const { hash } = await fh.hashElement(config.musicPath);
+    return hash;
+  }
+}
+
+type LoadedMetadata = mm.IAudioMetadata["common"] & { path: string };
+
+export const musicLibrary = new MusicLibraryManager();

@@ -17,13 +17,12 @@ model State {
 }
 
 model Track {
-  id        String   @id @default(uuid())
-  title     String
-  coverPath String
-  path      String   @unique
-  artists   Artist[]
-  album     Album    @relation(fields: [albumId], references: [id])
-  albumId   String
+  id      String   @id @default(uuid())
+  title   String
+  path    String   @unique
+  artists Artist[]
+  album   Album    @relation(fields: [albumId], references: [id])
+  albumId String
 }
 
 model Artist {
@@ -34,8 +33,9 @@ model Artist {
 }
 
 model Album {
-  id        String   @id @default(uuid())
-  title     String
-  tracks    Track[]
-  artists   Artist[]
+  id      String   @id @default(uuid())
+  title   String
+  tracks  Track[]
+  artists Artist[]
+  coverPath String?
 }

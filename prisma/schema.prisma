@@ -36,7 +36,6 @@ model Artist {
 model Album {
   id        String   @id @default(uuid())
   title     String
-  coverPath String
   tracks    Track[]
   artists   Artist[]
 }

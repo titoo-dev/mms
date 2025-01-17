@@ -3,4 +3,4 @@ dist/
 .env
 .idea
 **/dev.db
-dev.db-journal
+**/dev.db-journal

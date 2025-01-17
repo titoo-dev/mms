@@ -24,7 +24,10 @@
     "@pothos/core": "^4.3.0",
     "@pothos/plugin-prisma": "^4.4.0",
     "@prisma/client": "6.2.1",
+    "glob": "^11.0.1",
     "graphql": "16.10.0",
-    "graphql-yoga": "5.10.4"
+    "graphql-yoga": "5.10.4",
+    "music-metadata": "^10.7.0",
+    "uuid": "^11.0.5"
   }
 }

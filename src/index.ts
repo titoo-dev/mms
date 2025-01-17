@@ -1,5 +1,12 @@
+import * as uuid from "uuid";
+import { config } from "./config.js";
 import { server } from "./server/server.js";
+import { loadTracks } from "./lib/music-manager.js";
 
-server.listen(4000, () => {
-  console.log("Server is running on http://localhost:4000");
+server.listen(config.serverPort, async () => {
+  console.log(`Server listening at http://localhost:${config.serverPort}`);
+
+  await loadTracks((album) => {
+    return uuid.v5(album, uuid.v5.URL);
+  });
 });

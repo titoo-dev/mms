@@ -26,7 +26,7 @@ JK, I'll try to make it work for everyone (one day).
 
 #### TODO
 
-- [ ] Refactor the code, because it's a mess. I just want to make it work first. (I might never do this)
+- [ ] Refactor the code, because it's a mess. I just want to make it work first. (I might never do this, **SKILL ISSUE**)
 - [ ] Add more query options, allow sorting, filtering, etc
 - [ ] Improve the performance, yes I know it's should be the first thing to do, but as I said, it's not that bad
 - [ ] Other stuffs that I haven't thought of yet

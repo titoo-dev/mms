@@ -17,7 +17,7 @@ pnpm dev
 Sorry if it's not working for you (but normally it should work if you have `node` and `pnpm`).
 JK, I'll try to make it work for everyone (one day).
 
-> At this point I don't even know why am I writing this, I'm the only one who's gonna use this.
+> At this point I don't even know why am I writing this, I'm the only one who's gonna use this anyway.
 
 ### Features
 

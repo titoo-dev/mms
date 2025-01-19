@@ -33,6 +33,7 @@ JK, I'll try to make it work for everyone (one day).
 
 ##### TODO
 
+- [ ] Stats
 - [ ] Refactor the code, because it's a mess. I just want to make it work first. (I might never do this, **AGAIN, SKILL ISSUE**)
 - [ ] Add more query options, allow sorting, filtering, etc
 - [ ] Improve the performance, yes I know it's should be the first thing to do, but as I said, it's not that bad

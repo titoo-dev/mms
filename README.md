@@ -5,7 +5,13 @@ Yep, **SKILL ISSUE**!
 
 ![](/assets/naive-demo.png)
 
-## Development
+## Usage/Installation
+
+_Coming soon ..._
+
+This is a WIP
+
+### Development
 
 ```sh
 pnpm i
@@ -19,13 +25,13 @@ JK, I'll try to make it work for everyone (one day).
 
 > At this point I don't even know why am I writing this, I'm the only one who's gonna use this anyway.
 
-### Features
+#### Features
 
 - [x] Serve music files with metadata, use `graphql`
 - [x] Serve album art
 - [x] Watch music files changes and update the database
 
-#### TODO
+##### TODO
 
 - [ ] Refactor the code, because it's a mess. I just want to make it work first. (I might never do this, **AGAIN, SKILL ISSUE**)
 - [ ] Add more query options, allow sorting, filtering, etc

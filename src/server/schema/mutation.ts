@@ -28,6 +28,21 @@ builder.mutationType({
         },
       }),
 
+      favoriteTrack: t.prismaField({
+        type: "Track",
+        args: {
+          trackId: t.arg.id({ required: true }),
+        },
+        resolve: async (_query, _root, { trackId }) => {
+          return prisma.track.update({
+            where: { id: trackId },
+            data: {
+              isFavorite: true,
+            },
+          });
+        },
+      }),
+
       trackPlay: t.prismaField({
         type: "PlayEvent",
         args: {
@@ -49,6 +64,61 @@ builder.mutationType({
           });
 
           return playEvent;
+        },
+      }),
+
+      createPlayList: t.prismaField({
+        type: "PlayList",
+        args: {
+          name: t.arg.string({ required: true }),
+          tracks: t.arg.idList(),
+        },
+        resolve: async (_query, _root, { name, tracks }) => {
+          const tracksConnected = tracks ? tracks.map((id) => ({ id })) : [];
+          return prisma.playList.create({
+            data: {
+              name,
+              tracks: {
+                connect: [...tracksConnected],
+              },
+            },
+          });
+        },
+      }),
+
+      addTrackToPlayList: t.prismaField({
+        type: "PlayList",
+        args: {
+          playListId: t.arg.id({ required: true }),
+          trackId: t.arg.id({ required: true }),
+        },
+        resolve: async (_query, _root, { playListId, trackId }) => {
+          return prisma.playList.update({
+            where: { id: playListId },
+            data: {
+              tracks: {
+                connect: { id: trackId },
+              },
+            },
+          });
+        },
+      }),
+
+      removeTrackFromPlayList: t.prismaField({
+        type: "PlayList",
+        args: {
+          playListId: t.arg.id({ required: true }),
+          trackId: t.arg.id({ required: true }),
+        },
+        resolve: async (_query, _root, { playListId, trackId }) => {
+          return prisma.playList.update({
+            where: { id: playListId },
+            data: {
+              tracks: {
+                disconnect: { id: trackId },
+              },
+            },
+          });
         },
       }),
     };

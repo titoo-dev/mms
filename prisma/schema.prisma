@@ -23,6 +23,7 @@ model Track {
   artists     Artist[]
   album       Album       @relation(fields: [albumId], references: [id])
   albumId     String
+  playlists   PlayList[]
   dateAdded   DateTime    @default(now())
   playHistory PlayEvent[]
   isFavorite  Boolean     @default(false)
@@ -41,6 +42,12 @@ model Album {
   tracks    Track[]
   artists   Artist[]
   coverPath String?
+}
+
+model PlayList {
+  id     String  @id @default(uuid())
+  name   String
+  tracks Track[]
 }
 
 model PlayEvent {

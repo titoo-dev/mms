@@ -1,7 +1,7 @@
 import { builder } from "./builder.js";
 
 import "./base.js";
-import "./query.js";
+import "./query/index.js";
 import "./mutation.js";
 import "./subscription.js";
 

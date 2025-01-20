@@ -1,7 +1,16 @@
 import { builder } from "./builder.js";
 import { DateTimeResolver } from "graphql-scalars";
+import { TrackSortField, SortOrder } from "./extraTypes.js";
 
 builder.addScalarType("Date", DateTimeResolver, {});
+
+builder.enumType(TrackSortField, {
+  name: "SortField",
+});
+
+builder.enumType(SortOrder, {
+  name: "SortOrder",
+});
 
 builder.objectType("LoadedTracks", {
   fields: (t) => ({
@@ -27,6 +36,7 @@ builder.prismaObject("Track", {
     dateAdded: t.expose("dateAdded", {
       type: "Date",
     }),
+    playlists: t.relation("playlists"),
     isFavorite: t.exposeBoolean("isFavorite"),
     playHistory: t.relation("playHistory"),
   }),
@@ -48,6 +58,14 @@ builder.prismaObject("Album", {
     title: t.exposeString("title"),
     artists: t.relation("artists"),
     coverPath: t.exposeString("coverPath"),
+  }),
+});
+
+builder.prismaObject("PlayList", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    name: t.exposeString("name"),
+    tracks: t.relation("tracks"),
   }),
 });
 

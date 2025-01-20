@@ -12,6 +12,7 @@ export class TrackSaver {
     albumId: string,
   ): Promise<string | null> {
     const cover = mm.selectCover(pictures);
+    
     if (!cover) return null;
     const ext = cover.format.split("/")[1] ?? "jpg";
     const path = `${coverPath}/${albumId}.${ext}`;

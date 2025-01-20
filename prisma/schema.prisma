@@ -17,13 +17,15 @@ model State {
 }
 
 model Track {
-  id        String   @id @default(uuid())
-  title     String
-  path      String   @unique
-  artists   Artist[]
-  album     Album    @relation(fields: [albumId], references: [id])
-  albumId   String
-  dateAdded DateTime @default(now())
+  id          String      @id @default(uuid())
+  title       String
+  path        String      @unique
+  artists     Artist[]
+  album       Album       @relation(fields: [albumId], references: [id])
+  albumId     String
+  dateAdded   DateTime    @default(now())
+  playHistory PlayEvent[]
+  isFavorite  Boolean     @default(false)
 }
 
 model Artist {
@@ -39,4 +41,11 @@ model Album {
   tracks    Track[]
   artists   Artist[]
   coverPath String?
+}
+
+model PlayEvent {
+  id       String   @id @default(uuid())
+  track    Track    @relation(fields: [trackId], references: [id])
+  trackId  String
+  playedAt DateTime @default(now())
 }

@@ -27,6 +27,8 @@ builder.prismaObject("Track", {
     dateAdded: t.expose("dateAdded", {
       type: "Date",
     }),
+    isFavorite: t.exposeBoolean("isFavorite"),
+    playHistory: t.relation("playHistory"),
   }),
 });
 
@@ -46,5 +48,15 @@ builder.prismaObject("Album", {
     title: t.exposeString("title"),
     artists: t.relation("artists"),
     coverPath: t.exposeString("coverPath"),
+  }),
+});
+
+builder.prismaObject("PlayEvent", {
+  fields: (t) => ({
+    id: t.exposeID("id"),
+    track: t.relation("track"),
+    playedAt: t.expose("playedAt", {
+      type: "Date",
+    }),
   }),
 });

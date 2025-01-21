@@ -2,6 +2,7 @@ import { builder } from "../builder.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "$prisma/client.js";
 import { TrackSortField, SortOrder } from "../extraTypes.js";
+import { StateKey } from "src/server/types.js";
 
 const TrackSortByInput = builder.inputType("TrackSortByInput", {
   fields: (t) => ({
@@ -62,3 +63,18 @@ builder.queryField("tracks", (t) =>
     },
   }),
 );
+
+builder.queryField("dbInitialized", (t) => {
+  return t.field({
+    type: "Boolean",
+    resolve: async () => {
+      const dirHash = await prisma.state
+        .findUnique({
+          where: { key: StateKey.DirectoryHash },
+        })
+        .then((state) => state?.value);
+
+      return !!dirHash;
+    },
+  });
+});

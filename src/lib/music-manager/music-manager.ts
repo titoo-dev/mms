@@ -130,6 +130,10 @@ class MusicLibraryManager extends EventEmitter {
       currentHash,
     };
   }
+
+  async getAudio(path: string) {
+    return await fs.promises.readFile(path);
+  }
 }
 
 export type LoadedMetadata = mm.IAudioMetadata["common"] & {

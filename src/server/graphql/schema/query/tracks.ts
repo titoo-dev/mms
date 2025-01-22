@@ -2,7 +2,7 @@ import { builder } from "../builder.js";
 import { Prisma } from "@prisma/client";
 import { prisma } from "$prisma/client.js";
 import { TrackSortField, SortOrder } from "../extraTypes.js";
-import { StateKey } from "src/server/types.js";
+import { StateKey } from "../../../types.js";
 
 const TrackSortByInput = builder.inputType("TrackSortByInput", {
   fields: (t) => ({

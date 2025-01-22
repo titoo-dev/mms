@@ -1,7 +1,7 @@
-import { StateKey } from "../types.js";
+import { StateKey } from "../../types.js";
 import { builder } from "./builder.js";
 import { prisma } from "$prisma/client.js";
-import { musicLibrary } from "../../lib/music-manager/music-manager.js";
+import { musicLibrary } from "../../../lib/music-manager/music-manager.js";
 
 builder.mutationType({
   fields: (t) => {

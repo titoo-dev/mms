@@ -1,4 +1,3 @@
-import "./cover.js";
 import "./tracks.js";
 import "./albums.js";
 

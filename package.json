@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/node": "^22.10.6",
     "prettier": "^3.4.2",
     "prisma": "^6.2.1",
@@ -24,6 +25,7 @@
     "@pothos/core": "^4.3.0",
     "@pothos/plugin-prisma": "^4.4.0",
     "@prisma/client": "6.2.1",
+    "express": "^4.21.2",
     "glob": "^11.0.1",
     "graphql": "16.10.0",
     "graphql-scalars": "^1.24.0",

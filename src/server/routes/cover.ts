@@ -1,6 +1,6 @@
 import express from "express";
-import { prisma } from "$prisma/client.js";
-import { musicLibrary } from "$lib/music-manager/music-manager.js";
+import { prisma } from "../../../prisma/client.js";
+import { musicLibrary } from "../../lib/music-manager/music-manager.js";
 
 export const coverRouter = express.Router();
 

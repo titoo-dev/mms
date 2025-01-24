@@ -3,7 +3,7 @@ import * as uuid from "uuid";
 import * as mm from "music-metadata";
 import { basename } from "node:path";
 import { coverPath } from "../../config.js";
-import { prisma } from "$prisma/client.js";
+import {prisma} from "../../../prisma/client.js";
 import type { LoadedMetadata } from "./music-manager.js";
 
 export class TrackSaver {

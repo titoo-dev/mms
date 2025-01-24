@@ -25,6 +25,8 @@
     "@pothos/core": "^4.3.0",
     "@pothos/plugin-prisma": "^4.4.0",
     "@prisma/client": "6.2.1",
+    "@types/cors": "^2.8.17",
+    "cors": "^2.8.5",
     "express": "^4.21.2",
     "glob": "^11.0.1",
     "graphql": "16.10.0",

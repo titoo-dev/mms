@@ -1,8 +1,8 @@
 import { builder } from "../builder.js";
 import { Prisma } from "@prisma/client";
-import { prisma } from "$prisma/client.js";
-import { TrackSortField, SortOrder } from "../extraTypes.js";
 import { StateKey } from "../../../types.js";
+import { prisma } from "../../../../../prisma/client.js";
+import { TrackSortField, SortOrder } from "../extraTypes.js";
 
 const TrackSortByInput = builder.inputType("TrackSortByInput", {
   fields: (t) => ({
@@ -34,7 +34,7 @@ const buildWhere = (
 const buildSortBy = (
   args?: typeof TrackSortByInput.$inferInput | null,
 ): Prisma.TrackOrderByWithRelationInput => {
-  if (!args) return {};
+  if (!args || args.field === TrackSortField.NONE) return {};
   return {
     ...(args.field === TrackSortField.TITLE && { title: args.order }),
     ...(args.field === TrackSortField.DATE_ADDED && { dateAdded: args.order }),

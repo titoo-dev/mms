@@ -7,9 +7,9 @@ import * as crypto from "node:crypto";
 import EventEmitter from "node:events";
 import { logger } from "../logger.js";
 import { config } from "../../config.js";
-import { prisma } from "$prisma/client.js";
 import { TrackSaver } from "./track-saver.js";
 import { startWatcher } from "./watcher.js";
+import {prisma} from "../../../prisma/client.js";
 import { type LoadedTracks, StateKey } from "../../server/types.js";
 
 class MusicLibraryManager extends EventEmitter {

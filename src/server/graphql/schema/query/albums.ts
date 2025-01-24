@@ -1,6 +1,6 @@
-import { prisma } from "$prisma/client.js";
 import type { Prisma } from "@prisma/client";
 import { builder } from "../builder.js";
+import {prisma} from "../../../../../prisma/client.js";
 
 const AlbumWhereInput = builder.inputType("AlbumWhereInput", {
   fields: (t) => ({

@@ -14,7 +14,8 @@ audioRouter.get("/:trackId", async (req, res) => {
     },
   });
   if (!track) {
-    throw new Error("Track not found");
+    res.status(404).send("Track not found");
+    return;
   }
   const audioBuffer = await musicLibrary.getAudio(track.path!);
   res.setHeader("Content-Type", "audio/mpeg");

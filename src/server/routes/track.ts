@@ -18,6 +18,10 @@ audioRouter.get("/:trackId", async (req, res) => {
     return;
   }
   const audioBuffer = await musicLibrary.getAudio(track.path!);
-  res.setHeader("Content-Type", "audio/mpeg");
+  res.set({
+    "Accept-Ranges": "bytes",
+    "Content-Type": "audio/mpeg",
+    "Content-Length": audioBuffer.length,
+  });
   res.send(audioBuffer);
 });

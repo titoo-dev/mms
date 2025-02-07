@@ -1,6 +1,6 @@
 import SchemaBuilder from "@pothos/core";
 import PrismaPlugin from "@pothos/plugin-prisma";
-import type { LoadedTracks } from "../../types.js";
+import type {LoadedTracks, Lyrics} from "../../types.js";
 import {prisma} from "../../../../prisma/client.js";
 
 import type PrismaTypes from "@pothos/plugin-prisma/generated";
@@ -10,6 +10,7 @@ export const builder = new SchemaBuilder<{
   PrismaTypes: PrismaTypes;
   Objects: {
     LoadedTracks: LoadedTracks;
+    Lyrics: Lyrics
   };
   Context: { pubsub: typeof pubsub };
   Scalars: {

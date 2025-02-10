@@ -6,6 +6,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
+    "preview": "node ./dist/src",
     "check": "tsc --noEmit",
     "dev": "tsx watch ./src",
     "db:push": "prisma db push"

@@ -16,6 +16,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/express": "^5.0.0",
+    "@types/lodash.throttle": "^4.1.9",
     "@types/node": "^22.10.6",
     "prettier": "^3.4.2",
     "prisma": "^6.3.0",
@@ -33,6 +34,7 @@
     "graphql": "16.10.0",
     "graphql-scalars": "^1.24.0",
     "graphql-yoga": "5.10.4",
+    "lodash.throttle": "^4.1.1",
     "music-metadata": "^10.7.0",
     "node-watch": "^0.7.4",
     "p-limit": "^6.2.0",

@@ -9,7 +9,7 @@ import { logger } from "../logger.js";
 import { config } from "../../config.js";
 import { TrackSaver } from "./track-saver.js";
 import { startWatcher } from "./watcher.js";
-import {prisma} from "../../../prisma/client.js";
+import { prisma } from "../../../prisma/client.js";
 import { type LoadedTracks, StateKey } from "../../server/types.js";
 
 class MusicLibraryManager extends EventEmitter {
@@ -17,6 +17,7 @@ class MusicLibraryManager extends EventEmitter {
   private readonly trackSaver = new TrackSaver();
   private readonly supportedExtensions = ["mp3", "flac", "wav", "ogg"];
   private readonly globPattern = `${config.musicPath}/**/*.{${this.supportedExtensions.join(",")}}`;
+  private watcherCleanup: (() => void) | null = null;
 
   constructor() {
     super();
@@ -24,18 +25,22 @@ class MusicLibraryManager extends EventEmitter {
   }
 
   initWatcher() {
-    startWatcher();
+    this.watcherCleanup = startWatcher();
   }
 
   private initListeners() {
-    this.on("update", async (path: string) => {
-      if (!this.isMusicFile(path)) return;
-      await this.trackSaver.updateTrack(path);
-    });
+    try {
+      this.on("update", async (path: string) => {
+        if (!this.isMusicFile(path)) return;
+        await this.trackSaver.updateTrack(path);
+      });
 
-    this.on("remove", async (path: string) => {
-      await this.trackSaver.removeTrack(path);
-    });
+      this.on("remove", async (path: string) => {
+        await this.trackSaver.removeTrack(path);
+      });
+    } catch {
+      this.watcherCleanup?.();
+    }
   }
 
   async *loadTracks(): AsyncGenerator<LoadedMetadata> {

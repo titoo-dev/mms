@@ -1,22 +1,36 @@
 import watch from "node-watch";
 import { config } from "../../config.js";
 import { musicLibrary } from "./music-manager.js";
+import throttle from "lodash.throttle";
 
 export const startWatcher = () => {
+  const handleUpdate = throttle(async (path: string) => {
+    musicLibrary.emit("update", path);
+  }, 1000);
+
+  const handleRemove = throttle(async (path: string) => {
+    musicLibrary.emit("remove", path);
+  }, 1000);
+
   // @ts-ignore
-  watch(
+  const watcher = watch(
     config.musicPath,
     { recursive: true },
     async (event: WatchEvent, path: string) => {
       if (event === "update") {
-        musicLibrary.emit("update", path);
+        handleUpdate(path);
       }
-
       if (event === "remove") {
-        musicLibrary.emit("remove", path);
+        handleRemove(path);
       }
     },
   );
+
+  return () => {
+    watcher.close();
+    handleUpdate.cancel();
+    handleRemove.cancel();
+  };
 };
 
 type WatchEvent = "update" | "remove";

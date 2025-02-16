@@ -1,7 +1,7 @@
 import { StateKey } from "../../types.js";
 import { builder } from "./builder.js";
 import { musicLibrary } from "../../../lib/music-manager/music-manager.js";
-import {prisma} from "../../../../prisma/client.js";
+import { prisma } from "../../../../prisma/client.js";
 
 builder.mutationType({
   fields: (t) => {
@@ -32,12 +32,13 @@ builder.mutationType({
         type: "Track",
         args: {
           trackId: t.arg.id({ required: true }),
+          value: t.arg.boolean({ required: true }),
         },
-        resolve: async (_query, _root, { trackId }) => {
+        resolve: async (_query, _root, { trackId, value }) => {
           return prisma.track.update({
             where: { id: trackId },
             data: {
-              isFavorite: true,
+              isFavorite: value,
             },
           });
         },
@@ -57,13 +58,11 @@ builder.mutationType({
             throw new Error(`Track with ID ${trackId} not found`);
           }
 
-          const playEvent = await prisma.playEvent.create({
+          return await prisma.playEvent.create({
             data: {
               trackId,
             },
           });
-
-          return playEvent;
         },
       }),
 

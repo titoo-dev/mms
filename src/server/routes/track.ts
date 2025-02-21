@@ -1,6 +1,6 @@
+import fs from "fs";
 import express from "express";
 import { prisma } from "../../../prisma/client.js";
-import { musicLibrary } from "../../lib/music-manager/music-manager.js";
 
 export const audioRouter = express.Router();
 
@@ -13,15 +13,42 @@ audioRouter.get("/:trackId", async (req, res) => {
       album: true,
     },
   });
+
   if (!track) {
     res.status(404).send("Track not found");
     return;
   }
-  const audioBuffer = await musicLibrary.getAudio(track.path!);
+
+  const filePath = track.path!;
+  const stat = fs.statSync(filePath);
+
   res.set({
     "Accept-Ranges": "bytes",
     "Content-Type": "audio/mpeg",
-    "Content-Length": audioBuffer.length,
+    "Content-Length": stat.size,
   });
-  res.send(audioBuffer);
+
+  const range = req.headers.range;
+  if (range) {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+
+    if (start >= stat.size) {
+      res.status(416).send("Requested range not satisfiable");
+      return;
+    }
+
+    res.status(206).set({
+      "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+      "Content-Length": end - start + 1,
+    });
+
+    const fileStream = fs.createReadStream(filePath, { start, end });
+    fileStream.pipe(res);
+  } else {
+    // If no range is requested, stream  entire file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  }
 });

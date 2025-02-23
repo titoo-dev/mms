@@ -19,16 +19,27 @@ class MusicLibraryManager extends EventEmitter {
   private readonly globPattern = `${config.musicPath}/**/*.{${this.supportedExtensions.join(",")}}`;
   private watcherCleanup: (() => void) | null = null;
 
+  /**
+   * Initializes a new instance of MusicLibraryManager.
+   */
   constructor() {
     super();
     this.initListeners();
   }
 
-  initWatcher() {
+  /**
+   * Initializes the file system watcher.
+   * @returns {void}
+   */
+  initWatcher(): void {
     this.watcherCleanup = startWatcher();
   }
 
-  private initListeners() {
+  /**
+   * Sets up event listeners for track update and removal.
+   * @returns {void}
+   */
+  private initListeners(): void {
     try {
       this.on("update", async (path: string) => {
         if (!this.isMusicFile(path)) return;
@@ -43,46 +54,45 @@ class MusicLibraryManager extends EventEmitter {
     }
   }
 
+  /**
+   * Loads and yields track metadata in batches.
+   * @returns {AsyncGenerator<LoadedMetadata>} - An async generator yielding track metadata.
+   */
   async *loadTracks(): AsyncGenerator<LoadedMetadata> {
     const tracks = await glob(this.globPattern, { nodir: true, stat: true });
-    const batchCount = Math.ceil(tracks.length / this.BATCH_SIZE);
     const limit = pLimit(50);
 
     await this.trackSaver.deleteDeletedTracks(tracks);
 
-    for (let i = 0; i < batchCount; i++) {
-      const start = i * this.BATCH_SIZE;
-      const end = Math.min(start + this.BATCH_SIZE, tracks.length);
-      const batch = tracks.slice(start, end);
+    for (let i = 0; i < tracks.length; i += this.BATCH_SIZE) {
+      const batch = tracks.slice(i, i + this.BATCH_SIZE);
 
-      const metadataPromises = batch.map((track, index) =>
-        limit(async () => {
-          try {
-            const { common } = await mm.parseFile(track);
-            const dateAdded = await fs.promises
-              .stat(track)
-              .then((stat) => stat.birthtime);
+      const metadataBatch = await Promise.all(
+        batch.map((track) =>
+          limit(async () => {
+            try {
+              const { common } = await mm.parseFile(track);
+              const dateAdded = (await fs.promises.stat(track)).birthtime;
 
-            const currentIndex = start + index;
-            return {
-              ...common,
-              dateAdded,
-              path: track,
-              state: {
-                current: currentIndex + 1,
-                total: tracks.length,
-                done: currentIndex === tracks.length - 1,
-              },
-            };
-          } catch (error) {
-            const message = `Error loading track at ${track}: ${(error as Error).message}`;
-            await logger.error(message);
-            throw new Error(message);
-          }
-        }),
+              return {
+                ...common,
+                dateAdded,
+                path: track,
+                state: {
+                  current: i + batch.indexOf(track) + 1,
+                  total: tracks.length,
+                  done: i + batch.indexOf(track) === tracks.length - 1,
+                },
+              };
+            } catch (error) {
+              const message = `Error loading track at ${track}: ${(error as Error).message}`;
+              await logger.error(message);
+              throw new Error(message);
+            }
+          })
+        )
       );
 
-      const metadataBatch = await Promise.all(metadataPromises);
       await this.trackSaver.saveTracks(metadataBatch);
 
       for (const metadata of metadataBatch) {
@@ -91,7 +101,11 @@ class MusicLibraryManager extends EventEmitter {
     }
   }
 
-  async getDirectoryHash() {
+  /**
+   * Recursively computes a SHA-256 hash of the music directory contents.
+   * @returns {Promise<string>} - The computed hash as a hexadecimal string.
+   */
+  async getDirectoryHash(): Promise<string> {
     const hash = crypto.createHash("sha256");
 
     async function traverseDirectory(directory: string) {
@@ -115,15 +129,29 @@ class MusicLibraryManager extends EventEmitter {
     return hash.digest("hex");
   }
 
-  async getCover(coverPath: string) {
+  /**
+   * Reads and returns the cover image file contents.
+   * @param {string} coverPath - The file path of the cover image.
+   * @returns {Promise<Buffer>} - A promise resolving to the cover image data as a Buffer.
+   */
+  async getCover(coverPath: string): Promise<Buffer> {
     return fs.promises.readFile(coverPath);
   }
 
-  private isMusicFile(path: string) {
+  /**
+   * Checks if the provided path points to a supported music file.
+   * @param {string} path - The file path to check.
+   * @returns {boolean} - True if the file is a supported music file; otherwise, false.
+   */
+  private isMusicFile(path: string): boolean {
     return this.supportedExtensions.includes(path.split(".").pop()!);
   }
 
-  async shouldReloadTracks() {
+  /**
+   * Determines whether tracks should be reloaded based on directory hash changes.
+   * @returns {Promise<{ shouldReload: boolean; currentHash: string }>} - Object indicating if reload is needed and the current hash.
+   */
+  async shouldReloadTracks(): Promise<{ shouldReload: boolean; currentHash: string; }> {
     const storedHash = (
       await prisma.state.findUnique({
         where: { key: StateKey.DirectoryHash },
@@ -136,7 +164,12 @@ class MusicLibraryManager extends EventEmitter {
     };
   }
 
-  async getAudio(path: string) {
+  /**
+   * Reads and returns the audio file content.
+   * @param {string} path - The file path of the audio.
+   * @returns {Promise<Buffer>} - A promise resolving to the audio file data as a Buffer.
+   */
+  async getAudio(path: string): Promise<Buffer> {
     return await fs.promises.readFile(path);
   }
 }

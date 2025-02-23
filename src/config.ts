@@ -10,7 +10,7 @@ export const BASE_CONFIG_DIR = (
 
 const DEFAULT_CONFIG: Config = {
   serverPort: 4000,
-  musicPath: "C:\/Users\/PC\/Music",
+  musicPath: "~/Music",
 };
 
 /**

@@ -3,10 +3,24 @@ import * as uuid from "uuid";
 import * as mm from "music-metadata";
 import { basename } from "node:path";
 import { coverPath } from "../../config.js";
-import {prisma} from "../../../prisma/client.js";
+import { prisma } from "../../../prisma/client.js";
 import type { LoadedMetadata } from "./music-manager.js";
 
+/**
+ * Retrieves or creates the cover image file path for an album.
+ * @param {mm.IPicture[] | undefined} pictures - Array of picture objects from metadata.
+ * @param {string} albumId - The album identifier.
+ * @returns {Promise<string | null>} - The cover image file path or null if no cover exists.
+ */
 export class TrackSaver {
+
+
+  /**
+   * Retrieves the cover image file path for an album, saving the cover image if it doesn't exist.
+   * @param {mm.IPicture[] | undefined} pictures - Array of picture objects from metadata.
+   * @param {string} albumId - The album identifier.
+   * @returns {Promise<string | null>} - The cover image file path or null if no cover exists.
+   */
   async getCoverPath(
     pictures: mm.IPicture[] | undefined,
     albumId: string,
@@ -24,7 +38,12 @@ export class TrackSaver {
     return path;
   }
 
-  async saveTracks(metadataBatch: LoadedMetadata[]) {
+  /**
+   * Saves a batch of track metadata by grouping tracks by album and processing each album.
+   * @param {LoadedMetadata[]} metadataBatch - Array of track metadata.
+   * @returns {Promise<void>}
+   */
+  async saveTracks(metadataBatch: LoadedMetadata[]): Promise<void> {
     const tracksByAlbum = this.groupTracksByAlbum(metadataBatch);
     const albumPromises = tracksByAlbum.map(([albumIdentifier, tracks]) =>
       this.processAlbum(albumIdentifier, tracks),
@@ -32,6 +51,11 @@ export class TrackSaver {
     await Promise.all(albumPromises);
   }
 
+  /**
+   * Groups track metadata by a computed album identifier.
+   * @param {LoadedMetadata[]} metadataBatch - Array of track metadata.
+   * @returns {[string, LoadedMetadata[]][]} - Array of tuples pairing album identifier with its tracks.
+   */
   private groupTracksByAlbum(
     metadataBatch: LoadedMetadata[],
   ): [string, LoadedMetadata[]][] {
@@ -46,10 +70,16 @@ export class TrackSaver {
     return Array.from(tracksByAlbum.entries());
   }
 
+  /**
+   * Processes an album by upserting album, its artists, and tracks using metadata.
+   * @param {string} albumIdentifier - The computed album identifier.
+   * @param {LoadedMetadata[]} tracks - Array of track metadata belonging to the album.
+   * @returns {Promise<void>}
+   */
   private async processAlbum(
     albumIdentifier: string,
     tracks: LoadedMetadata[],
-  ) {
+  ): Promise<void> {
     const albumId = uuid.v5(albumIdentifier, uuid.v5.DNS);
     const existingAlbum = await prisma.album.findUnique({
       where: { id: albumId },
@@ -61,7 +91,7 @@ export class TrackSaver {
       (tracks[0].picture
         ? await this.getCoverPath(tracks[0].picture, albumId)
         : null);
-    const album = await prisma.album.upsert({
+    await prisma.album.upsert({
       where: { id: albumId },
       update: { coverPath: existingAlbum?.coverPath ? undefined : coverPath },
       create: {
@@ -71,10 +101,16 @@ export class TrackSaver {
       },
     });
 
-    const artistMap = await this.upsertArtists(tracks, album.id);
-    await this.upsertTracks(tracks, album.id, artistMap);
+    const artistMap = await this.upsertArtists(tracks, albumId);
+    await this.upsertTracks(tracks, albumId, artistMap);
   }
 
+  /**
+   * Upserts artists associated with tracks and returns a mapping of artist names to records.
+   * @param {LoadedMetadata[]} tracks - Array of track metadata.
+   * @param {string} albumId - The album identifier.
+   * @returns {Promise<Map<string, any>>} - A map of artist names to their upserted records.
+   */
   private async upsertArtists(
     tracks: LoadedMetadata[],
     albumId: string,
@@ -105,12 +141,19 @@ export class TrackSaver {
     return artistMap;
   }
 
+  /**
+   * Upserts tracks into the database for a given album.
+   * @param {LoadedMetadata[]} tracks - Array of track metadata.
+   * @param {string} albumId - The album identifier.
+   * @param {Map<string, any>} artistMap - Mapping of artist names to their records.
+   * @returns {Promise<void>}
+   */
   private async upsertTracks(
     tracks: LoadedMetadata[],
     albumId: string,
     artistMap: Map<string, any>,
-  ) {
-    const trackUpserts = tracks.map(async (metadata) => {
+  ): Promise<void> {
+    const trackUpserts = tracks.map((metadata) => {
       const trackTitle = metadata.title || basename(metadata.path);
       const artistNames = metadata.artist?.split(/,|, /g) ?? [];
       const trackArtists = artistNames
@@ -132,10 +175,15 @@ export class TrackSaver {
       });
     });
 
-    await Promise.all(trackUpserts);
+    await prisma.$transaction(trackUpserts);
   }
 
-  async updateTrack(path: string) {
+  /**
+   * Updates a single track by parsing its metadata and saving it.
+   * @param {string} path - The file path of the track.
+   * @returns {Promise<void>}
+   */
+  async updateTrack(path: string): Promise<void> {
     const { common } = await mm.parseFile(path);
     const dateAdded = await fs.promises
       .stat(path)
@@ -155,16 +203,27 @@ export class TrackSaver {
     await this.saveTracks([metadata]);
   }
 
-  async deleteDeletedTracks(tracksPath: string[]) {
-    const existingTracks = await prisma.track.findMany();
-    const existingPaths = existingTracks.map((track) => track.path);
-    const deletedPaths = existingPaths.filter(
-      (path) => !tracksPath.includes(path),
-    );
+  /**
+   * Deletes tracks from the database that no longer exist in the provided file paths.
+   * @param {string[]} tracksPath - Array of existing track file paths.
+   * @returns {Promise<void>}
+   */
+  async deleteDeletedTracks(tracksPath: string[]): Promise<void> {
+    const existingTracks = await prisma.track.findMany({
+      select: { path: true },
+    });
+    const deletedPaths = existingTracks
+      .map((track) => track.path)
+      .filter((path) => !tracksPath.includes(path));
+
     await Promise.all(deletedPaths.map((path) => this.removeTrack(path)));
   }
 
-  private async cleanUpAfterDelete() {
+  /**
+   * Cleans up unused artists and albums after track deletion.
+   * @returns {Promise<void>}
+   */
+  private async cleanUpAfterDelete(): Promise<void> {
     await prisma.artist.deleteMany({
       where: {
         tracks: {
@@ -182,29 +241,24 @@ export class TrackSaver {
     });
   }
 
-  async removeTrack(path: string) {
+  /**
+   * Removes a track from the database and deletes its cover image if necessary.
+   * @param {string} path - The file path of the track to remove.
+   * @returns {Promise<void>}
+   */
+  async removeTrack(path: string): Promise<void> {
     const tracks = await prisma.track.findMany({
-      where: {
-        path: {
-          startsWith: path,
-        },
-      },
+      where: { path },
       select: {
         path: true,
         album: {
-          select: {
-            coverPath: true,
-          },
+          select: { coverPath: true },
         },
       },
     });
 
     await prisma.track.deleteMany({
-      where: {
-        path: {
-          in: tracks.map((track) => track.path),
-        },
-      },
+      where: { path },
     });
 
     await Promise.all(
@@ -214,11 +268,18 @@ export class TrackSaver {
     await this.cleanUpAfterDelete();
   }
 
-  async deleteCover(coverPath?: string | null) {
+  /**
+   * Deletes the cover image file if it exists.
+   * @param {string | null | undefined} coverPath - The file path of the cover image.
+   * @returns {Promise<void>}
+   */
+  async deleteCover(coverPath?: string | null): Promise<void> {
     if (!coverPath) return;
     try {
       await fs.promises.access(coverPath);
       await fs.promises.unlink(coverPath);
-    } catch {}
+    } catch (error) {
+      console.error(`Failed to delete cover at ${coverPath}:`, error);
+    }
   }
 }

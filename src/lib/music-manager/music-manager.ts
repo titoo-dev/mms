@@ -5,6 +5,7 @@ import * as path from "node:path";
 import * as mm from "music-metadata";
 import * as crypto from "node:crypto";
 import EventEmitter from "node:events";
+import throttle from "lodash.throttle";
 import { logger } from "../logger.js";
 import { config } from "../../config.js";
 import { TrackSaver } from "./track-saver.js";
@@ -43,6 +44,24 @@ class MusicLibraryManager extends EventEmitter {
     try {
       this.on("update", async (path: string) => {
         if (!this.isMusicFile(path)) return;
+
+        const waitForDownload = async (filePath: string): Promise<void> => {
+          let initialSize = (await fs.promises.stat(filePath)).size;
+
+          const checkSize = throttle(async () => {
+            const newSize = (await fs.promises.stat(filePath)).size;
+            if (initialSize !== newSize) {
+              initialSize = newSize;
+              return false;
+            }
+            return true;
+          }, 1000);
+
+          while (!(await checkSize())) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        };
+        await waitForDownload(path);
         await this.trackSaver.updateTrack(path);
       });
 
@@ -60,7 +79,7 @@ class MusicLibraryManager extends EventEmitter {
    */
   async *loadTracks(): AsyncGenerator<LoadedMetadata> {
     const tracks = await glob(this.globPattern, { nodir: true, stat: true });
-    const limit = pLimit(50);
+    const limit = pLimit(this.BATCH_SIZE);
 
     await this.trackSaver.deleteDeletedTracks(tracks);
 
@@ -89,8 +108,8 @@ class MusicLibraryManager extends EventEmitter {
               await logger.error(message);
               throw new Error(message);
             }
-          })
-        )
+          }),
+        ),
       );
 
       await this.trackSaver.saveTracks(metadataBatch);
@@ -151,7 +170,10 @@ class MusicLibraryManager extends EventEmitter {
    * Determines whether tracks should be reloaded based on directory hash changes.
    * @returns {Promise<{ shouldReload: boolean; currentHash: string }>} - Object indicating if reload is needed and the current hash.
    */
-  async shouldReloadTracks(): Promise<{ shouldReload: boolean; currentHash: string; }> {
+  async shouldReloadTracks(): Promise<{
+    shouldReload: boolean;
+    currentHash: string;
+  }> {
     const storedHash = (
       await prisma.state.findUnique({
         where: { key: StateKey.DirectoryHash },

@@ -9,7 +9,6 @@ export const BASE_CONFIG_DIR = (
 )!;
 
 const DEFAULT_CONFIG: Config = {
-  serverPort: 4000,
   musicPath: "~/Music",
 };
 
@@ -63,5 +62,4 @@ export const config = buildConfig();
 
 export type Config = {
   musicPath: string;
-  serverPort?: number;
 };

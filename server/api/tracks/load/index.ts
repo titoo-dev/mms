@@ -4,10 +4,10 @@ export default defineEventHandler(async () => {
   const { shouldReload, currentHash } = await musicLibrary.shouldReloadTracks();
 
   if (shouldReload) {
-  for await (const metadata of musicLibrary.loadTracks()) {
-    musicLibrary.emit("trackLoaded", metadata);
-  }
-  await musicLibrary.updateDirectoryHash(currentHash);
+    for await (const metadata of musicLibrary.loadTracks()) {
+      musicLibrary.emit("trackLoaded", metadata);
+    }
+    await musicLibrary.updateDirectoryHash(currentHash);
   }
 
   return {

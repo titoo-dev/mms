@@ -18,10 +18,10 @@ export const startWatcher = () => {
     { recursive: true },
     async (event: WatchEvent, path: string) => {
       if (event === "update") {
-        handleUpdate(path);
+        await handleUpdate(path);
       }
       if (event === "remove") {
-        handleRemove(path);
+        await handleRemove(path);
       }
     },
   );

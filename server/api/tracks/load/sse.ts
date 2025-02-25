@@ -2,19 +2,21 @@ import { LoadedMetadata, musicLibrary } from "~~/lib/music-manager";
 
 export default defineEventHandler(async (event) => {
   const eventStream = createEventStream(event);
-  const sendEvent = async (eventType: string, data: any) => {
-    await eventStream.push(JSON.stringify({ type: eventType, data }));
-  };
 
   const timeout = setTimeout(async () => {
-    await sendEvent("status", { done: false });
-    musicLibrary.on("trackLoaded", async (metadata: LoadedMetadata) => {
-      await sendEvent("track", metadata);
-    });
+    await eventStream.push(
+      JSON.stringify({ type: "status", current: 0, total: 0 }),
+    );
   }, 0);
 
+  musicLibrary.on("trackLoaded", async (metadata: LoadedMetadata) => {
+    await eventStream.push(
+      JSON.stringify({ type: "track", ...metadata.state }),
+    );
+  });
+
   eventStream.onClosed(() => {
-    clearTimeout(timeout);
+    clearInterval(timeout);
     eventStream.close();
   });
 

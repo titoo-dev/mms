@@ -1,6 +1,10 @@
 node_modules/
 dist/
 .env
-.idea
-**/dev.db
-**/dev.db-journal
+.idea/
+
+
+.data
+.nitro
+.cache
+.output

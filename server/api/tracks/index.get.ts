@@ -22,9 +22,9 @@ const buildWhere = (
       return {
         artists: { some: { name: { contains: query.query } } },
       };
-    default:
+    case "album":
       return {
-        [field]: { contains: query.query },
+        album: { title: { contains: query.query } },
       };
   }
 };
